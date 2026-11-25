@@ -1,43 +1,90 @@
 from Models.clases import Licencia, Colaborador
 
 
-def ordenar_licencias_por_preferencia(
+def ordenar_licencias_merge_sort(
     licencias: list[Licencia],
     colaboradores_por_legajo: dict[int, Colaborador] | None = None,
 ) -> list[Licencia]:
     """
-    Ordenamiento Burbuja (Bubble Sort):
-    1. Si se proveen colaboradores, ordena primero por prioridad familiar descendente (3=casado, 1=hijos, 0=sin cargas).
-    2. A igual prioridad familiar (o si no se proveen colaboradores), ordena por preferencia ascendente (1=máxima, 3=mínima).
+    Ordena licencias mediante Merge Sort.
+
+    Criterios:
+    1. Prioridad familiar descendente.
+    2. Preferencia ascendente.
+    3. Mantiene el orden original cuando ambas prioridades coinciden.
+
+    Complejidad temporal: O(n log n).
+    Complejidad espacial: O(n).
     """
-    lista = licencias.copy()
-    n = len(lista)
 
-    def clave_orden(lic: Licencia) -> tuple[int, int]:
-        prio_familiar = 0
-        if colaboradores_por_legajo and lic.colaborador_legajo in colaboradores_por_legajo:
-            prio_familiar = colaboradores_por_legajo[lic.colaborador_legajo].nivel_prioridad
-        pref_orden = lic.nivel_preferencia if lic.nivel_preferencia is not None else 99
-        return (-prio_familiar, pref_orden)
+    def obtener_clave(licencia: Licencia) -> tuple[int, int]:
+        prioridad_familiar = 0
 
-    for i in range(n):
-        for j in range(0, n - i - 1):
-            if clave_orden(lista[j]) > clave_orden(lista[j + 1]):
-                lista[j], lista[j + 1] = lista[j + 1], lista[j]
-    return lista
+        if (
+            colaboradores_por_legajo is not None
+            and licencia.colaborador_legajo in colaboradores_por_legajo
+        ):
+            colaborador = colaboradores_por_legajo[
+                licencia.colaborador_legajo
+            ]
+            prioridad_familiar = colaborador.nivel_prioridad
 
+        preferencia = (
+            licencia.nivel_preferencia
+            if licencia.nivel_preferencia is not None
+            else 99
+        )
 
-def ordenar_colaboradores_por_prioridad(
-    colaboradores: list[Colaborador],
-) -> list[Colaborador]:
-    """
-    Ordenamiento Burbuja (Bubble Sort) descendente por nivel_prioridad
-    (3 = casado, 1 = con hijos, 0 = sin cargas).
-    """
-    lista = colaboradores.copy()
-    n = len(lista)
-    for i in range(n):
-        for j in range(0, n - i - 1):
-            if lista[j].nivel_prioridad < lista[j + 1].nivel_prioridad:
-                lista[j], lista[j + 1] = lista[j + 1], lista[j]
-    return lista
+        return (-prioridad_familiar, preferencia)
+
+    def fusionar(
+        mitad_izquierda: list[Licencia],
+        mitad_derecha: list[Licencia],
+    ) -> list[Licencia]:
+
+        resultado = []
+        indice_izquierda = 0
+        indice_derecha = 0
+
+        # Comparamos los elementos de ambas mitades.
+        while (
+            indice_izquierda < len(mitad_izquierda)
+            and indice_derecha < len(mitad_derecha)
+        ):
+
+            licencia_izquierda = mitad_izquierda[indice_izquierda]
+            licencia_derecha = mitad_derecha[indice_derecha]
+
+            if (
+                obtener_clave(licencia_izquierda)
+                <= obtener_clave(licencia_derecha)
+            ):
+                resultado.append(licencia_izquierda)
+                indice_izquierda += 1
+
+            else:
+                resultado.append(licencia_derecha)
+                indice_derecha += 1
+
+        # Incorporamos los elementos restantes.
+        resultado.extend(mitad_izquierda[indice_izquierda:])
+        resultado.extend(mitad_derecha[indice_derecha:])
+
+        return resultado
+
+    def merge_sort(lista: list[Licencia]) -> list[Licencia]:
+
+        # Caso base: una lista de cero o un elemento ya está ordenada.
+        if len(lista) <= 1:
+            return lista
+
+        punto_medio = len(lista) // 2
+
+        # Dividimos la lista en dos mitades.
+        mitad_izquierda = merge_sort(lista[:punto_medio])
+        mitad_derecha = merge_sort(lista[punto_medio:])
+
+        # Fusionamos las dos mitades ordenadas.
+        return fusionar(mitad_izquierda, mitad_derecha)
+
+    return merge_sort(licencias.copy())

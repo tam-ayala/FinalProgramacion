@@ -1,246 +1,375 @@
 from datetime import date
+
 from Service.casos_uso import SistemaVacacionesApex
+
 from Estructuras.algoritmo_ordenamiento import (
-    ordenar_licencias_por_preferencia,
-    ordenar_colaboradores_por_prioridad,
+    ordenar_licencias_merge_sort,
 )
-from Models.clases import (
-    Colaborador,
-    Supervisor,
-    AdministradorRRHH,
-    CalendarioCorporativo,
-    Licencia,
-)
+
+from Models.clases import Supervisor, AdministradorRRHH
 
 
 def mostrar_menu():
+
     sistema = SistemaVacacionesApex()
 
     while True:
-        print("  APEX AMÉRICA - SISTEMA DE GESTIÓN DE VACACIONES")
 
-        # ==========================================================
-        # CASO A: USUARIO NO AUTENTICADO (Solo Login y Salir)
-        # ==========================================================
-        if not sistema.usuario_logueado:
-            print("  Sesión: No autenticado")
-            print("1. [CU N1] Iniciar Sesión (Login)")
+        print("\n========================================")
+        print("APEX AMERICA - SISTEMA DE VACACIONES")
+        print("========================================")
+
+        # USUARIO NO AUTENTICADO
+        if sistema.usuario_logueado is None:
+
+            print("\n1. Iniciar sesion")
             print("0. Salir")
 
-            opcion = input("Seleccione una opción: ").strip()
+            opcion = input("Seleccione una opcion: ").strip()
 
             try:
+
                 if opcion == "1":
-                    print("--- Credenciales de prueba ---")
-                    print("Admin RRHH (Jerarquía 3) : mmoran / admin123")
-                    print("Supervisor (Jerarquía 2) : ipineda / sup123")
-                    print("Colaborador (Jerarquía 1): jperez  / colab123")
-                    user = input("Usuario: ").strip()
-                    pwd = input("Contraseña: ").strip()
-                    colab = sistema.cu1_login(user, pwd)
-                    print(
-                        f"Bienvenido/a {colab.nombre} {colab.apellido} "
+
+                    print("\nCredenciales de prueba:")
+                    print("Admin: mmoran / admin123")
+                    print("Supervisor: ipineda / sup123")
+                    print("Colaborador: jperez / colab123")
+
+                    usuario = input("Usuario: ").strip()
+                    contrasena = input("Contrasena: ").strip()
+
+                    colaborador = sistema.cu1_login(
+                        usuario,
+                        contrasena
                     )
+
+                    print(
+                        f"Bienvenido/a {colaborador.nombre} "
+                        f"{colaborador.apellido}"
+                    )
+
                 elif opcion == "0":
+
                     print("Saliendo del sistema...")
                     break
-                else:
-                    print("Opción inválida. Debe iniciar sesión para acceder al sistema.")
-            except Exception as e:
-                print(f"[ERROR]: {e}")
 
-        # ==========================================================
-        # CASO B: USUARIO AUTENTICADO (Panel según Jerarquía)
-        # ==========================================================
+                else:
+
+                    print("Opcion invalida.")
+
+            except Exception as error:
+
+                print(f"ERROR: {error}")
+
+        # USUARIO AUTENTICADO
         else:
-            u = sistema.usuario_logueado
-            es_supervisor = isinstance(u, Supervisor)
-            es_admin = isinstance(u, AdministradorRRHH)
-            mapa_colabs = {c.id_legajo: c for c in sistema.colaboradores}
+
+            usuario_actual = sistema.usuario_logueado
+
+            es_supervisor = isinstance(
+                usuario_actual,
+                Supervisor
+            )
+
+            es_administrador = isinstance(
+                usuario_actual,
+                AdministradorRRHH
+            )
+
+            colaboradores_por_legajo = {
+                colaborador.id_legajo: colaborador
+                for colaborador in sistema.colaboradores
+            }
+
+            print("\n----------------------------------------")
+            print(
+                f"Usuario: {usuario_actual.nombre} "
+                f"{usuario_actual.apellido}"
+            )
 
             print(
-                f" Sesión activa: {u.nombre} {u.apellido} | "
-                f"Rol: {type(u).__name__} (Jerarquía {u.nivel_jerarquia})"
+                f"Rol: {type(usuario_actual).__name__}"
             )
-            print("=" * 62)
 
-            # Opciones comunes a todo empleado autenticado (Jerarquía 1, 2 y 3)
-            print("1. [CU N4] Rankear Fechas de Vacaciones (Preferencia 1-3)")
-            print("2. [CU N6] Firmar Licencia Asignada")
+            print("----------------------------------------")
 
-            # Opciones exclusivas de Supervisor (Jerarquía 2)
+            print("1. [CU N4] Rankear fechas")
+            print("2. [CU N6] Firmar licencia")
+
             if es_supervisor:
-                print("3. [Supervisor] Aprobar o Rechazar Licencias Pendientes")
-                print("4. [Ordenamiento] Listar Licencias por Prioridad Familiar y Preferencia")
+                print("3. Aprobar o rechazar licencias")
+                print("4. Listar licencias con Merge Sort")
 
-            # Opciones exclusivas de Administrador RRHH (Jerarquía 3)
-            if es_admin:
-                print("3. [Admin RRHH] Confirmar o Rechazar Licencias Aprobadas")
-                print("4. [CU N10] Alta de Colaborador")
-                print("5. [Ordenamiento] Listar Licencias por Prioridad Familiar y Preferencia")
-                print("6. [Ordenamiento] Listar Colaboradores por Prioridad Familiar (Bubble Sort)")
+            if es_administrador:
+                print("3. Confirmar o rechazar licencias")
+                print("4. [CU N10] Alta de colaborador")
+                print("5. Listar licencias con Merge Sort")
 
-            print("9. Cerrar Sesión (Cambiar de usuario)")
+            print("9. Cerrar sesion")
             print("0. Salir")
 
-            opcion = input("Seleccione una opción: ").strip()
+            opcion = input("Seleccione una opcion: ").strip()
 
             try:
-                # --- Opción 1: CU N4 Rankeo (Todos los roles) ---
+
+                                # CU N4: RANKEAR FECHAS
+
                 if opcion == "1":
-                    lics = u.historial_licencias
-                    if not lics:
-                        print("No tiene licencias registradas para rankear.")
-                        continue
 
-                    print("--- Sus opciones de fechas disponibles ---")
-                    for idx, l in enumerate(lics, start=1):
-                        pref_actual = (
-                            l.nivel_preferencia
-                            if l.nivel_preferencia is not None
-                            else "Sin asignar"
-                        )
-                        print(
-                            f"Opción {idx} -> [ID Licencia: {l.id_licencia}] "
-                            f"Del {l.fecha_inicio} al {l.fecha_fin} | "
-                            f"Preferencia actual: {pref_actual} | Estado: {l.estado}"
-                        )
-
-                    prefs = {}
-                    for idx, l in enumerate(lics, start=1):
-                        p = int(
-                            input(
-                                f"Ingrese prioridad (1=máxima, 2=media, 3=mínima) para Opción {idx} (ID {l.id_licencia}): "
-                            )
-                        )
-                        prefs[l.id_licencia] = p
-
-                    sistema.cu4_rankear_fechas(u, prefs)
-
-                    print("Rankeo guardado correctamente. Sus licencias ordenadas por preferencia:")
-                    for l in ordenar_licencias_por_preferencia(u.historial_licencias):
-                        print(
-                            f"Prioridad {l.nivel_preferencia} -> [ID Licencia: {l.id_licencia}] "
-                            f"Del {l.fecha_inicio} al {l.fecha_fin} | Estado: {l.estado}"
-                        )
-
-                # --- Opción 2: CU N6 Firma de licencia (Todos los roles) ---
-                elif opcion == "2":
-                    asignadas = [l for l in u.historial_licencias if l.estado == "asignada"]
-                    if not asignadas:
-                        print("No tiene licencias en estado 'asignada' listas para firmar.")
-                        continue
-
-                    print("--- Licencias asignadas disponibles para firmar ---")
-                    for idx, l in enumerate(asignadas, start=1):
-                        pref_actual = (
-                            l.nivel_preferencia
-                            if l.nivel_preferencia is not None
-                            else "Sin asignar"
-                        )
-                        print(
-                            f"Opción {idx} -> [ID Licencia: {l.id_licencia}] "
-                            f"Del {l.fecha_inicio} al {l.fecha_fin} | Preferencia: {pref_actual}"
-                        )
-
-                    ids_validos = [l.id_licencia for l in asignadas]
-                    id_lic = int(input(f"Ingrese el ID de la licencia a firmar {ids_validos}: "))
-                    lic = sistema.cu6_firmar_licencia(u, id_lic)
-                    print(f"Licencia ID {lic.id_licencia} firmada con éxito. Nuevo estado: {lic.estado}")
-
-                # --- Opciones exclusivas de SUPERVISOR ---
-                
-                elif opcion == "3" and es_supervisor:
-                    pendientes = ordenar_licencias_por_preferencia(
-                        [
-                            l
-                            for l in sistema.licencias
-                            if l.estado == "pendiente" and l.nivel_preferencia is not None
-                        ],
-                        mapa_colabs,
+                    licencias_colaborador = (
+                        usuario_actual.historial_licencias
                     )
-                    if not pendientes:
-                        print("No hay licencias pendientes rankeadas para revisar.")
+
+                    if not licencias_colaborador:
+                        print("No tiene licencias registradas.")
                         continue
-                    print("--- Licencias pendientes rankeadas (ordenadas por prioridad familiar y preferencia) ---")
-                    for l in pendientes:
-                        colab_lic = mapa_colabs.get(l.colaborador_legajo)
-                        prio_fam = colab_lic.nivel_prioridad if colab_lic else 0
-                        print(f"{l} | Prioridad Familiar: {prio_fam}")
-                    id_lic = int(input("Ingrese ID de la licencia a evaluar: "))
-                    accion = input("¿Desea aprobarla? (s = aprobar / n = rechazar): ").strip().lower()
-                    lic = sistema.supervisor_gestionar_licencia(id_lic, aprobar=(accion == "s"))
-                    print(f"Licencia #{lic.id_licencia} actualizada a estado: {lic.estado}")
+
+                    preferencias_por_id = {}
+
+                    for licencia in licencias_colaborador:
+
+                        print(licencia)
+
+                        while True:
+
+                            try:
+
+                                preferencia = int(
+                                    input(
+                                        "Ingrese preferencia (1, 2 o 3): "
+                                    )
+                                )
+
+                                if preferencia in (1, 2, 3):
+                                    preferencias_por_id[
+                                        licencia.id_licencia
+                                    ] = preferencia
+                                    break
+
+                                print("Ingrese 1, 2 o 3.")
+
+                            except ValueError:
+                                print("Debe ingresar un numero.")
+
+                    sistema.cu4_rankear_fechas(
+                        usuario_actual,
+                        preferencias_por_id
+                    )
+
+                    licencias_ordenadas = ordenar_licencias_merge_sort(
+                        licencias_colaborador
+                    )
+
+                    print("\nLicencias ordenadas por preferencia:")
+
+                    for licencia in licencias_ordenadas:
+                        print(licencia)
+
+                # CU N6: FIRMAR LICENCIA
+
+                elif opcion == "2":
+
+                    licencias_asignadas = [
+                        licencia
+                        for licencia in usuario_actual.historial_licencias
+                        if licencia.estado == "asignada"
+                    ]
+
+                    if not licencias_asignadas:
+                        print("No hay licencias asignadas.")
+                        continue
+
+                    for licencia in licencias_asignadas:
+                        print(licencia)
+
+                    id_licencia = int(
+                        input("Ingrese el ID de la licencia: ")
+                    )
+
+                    licencia = sistema.cu6_firmar_licencia(
+                        usuario_actual,
+                        id_licencia
+                    )
+
+                    print(
+                        f"Licencia firmada. Estado: {licencia.estado}"
+                    )
+
+                # SUPERVISOR: APROBAR O RECHAZAR
+
+                elif opcion == "3" and es_supervisor:
+
+                    licencias_pendientes = [
+                        licencia
+                        for licencia in sistema.licencias
+                        if (
+                            licencia.estado == "pendiente"
+                            and licencia.nivel_preferencia is not None
+                        )
+                    ]
+
+                    licencias_pendientes = ordenar_licencias_merge_sort(
+                        licencias_pendientes,
+                        colaboradores_por_legajo
+                    )
+
+                    if not licencias_pendientes:
+                        print("No hay licencias pendientes.")
+                        continue
+
+                    for licencia in licencias_pendientes:
+                        print(licencia)
+
+                    id_licencia = int(
+                        input("ID de licencia a evaluar: ")
+                    )
+
+                    accion = input(
+                        "Aprobar (s) o rechazar (n): "
+                    ).strip().lower()
+
+                    if accion not in ("s", "n"):
+                        print("Accion invalida.")
+                        continue
+
+                    licencia = sistema.supervisor_gestionar_licencia(
+                        id_licencia,
+                        aprobar=(accion == "s")
+                    )
+
+                    print(f"Nuevo estado: {licencia.estado}")
+
+                # SUPERVISOR: LISTAR CON MERGE SORT
 
                 elif opcion == "4" and es_supervisor:
-                    print("--- Licencias ordenadas por Prioridad Familiar y Preferencia (Bubble Sort) ---")
-                    for lic in ordenar_licencias_por_preferencia(sistema.licencias, mapa_colabs):
-                        colab_lic = mapa_colabs.get(lic.colaborador_legajo)
-                        prio_fam = colab_lic.nivel_prioridad if colab_lic else 0
-                        print(f"{lic} | Prioridad Familiar: {prio_fam}")
 
-                # --- Opciones exclusivas de ADMINISTRADOR RRHH ---
-                elif opcion == "3" and es_admin:
-                    aprobadas = ordenar_licencias_por_preferencia(
-                        [l for l in sistema.licencias if l.estado == "aprobada"],
-                        mapa_colabs,
+                    licencias_ordenadas = ordenar_licencias_merge_sort(
+                        sistema.licencias,
+                        colaboradores_por_legajo
                     )
-                    if not aprobadas:
-                        print("No hay licencias aprobadas pendientes de confirmación.")
-                        continue
-                    print("--- Licencias aprobadas (ordenadas por prioridad familiar y preferencia) ---")
-                    for l in aprobadas:
-                        colab_lic = mapa_colabs.get(l.colaborador_legajo)
-                        prio_fam = colab_lic.nivel_prioridad if colab_lic else 0
-                        print(f"{l} | Prioridad Familiar: {prio_fam}")
-                    id_lic = int(input("Ingrese ID de la licencia aprobada a resolver: "))
-                    accion = input("¿Confirmar licencia? (s = confirmar / n = rechazar): ").strip().lower()
-                    lic = sistema.admin_confirmar_licencia(id_lic, confirmar=(accion == "s"))
-                    print(f"Licencia #{lic.id_licencia} actualizada a estado: {lic.estado}")
 
-                elif opcion == "4" and es_admin:
+                    for licencia in licencias_ordenadas:
+                        print(licencia)
+
+                            # ADMINISTRADOR: CONFIRMAR O RECHAZAR
+
+                elif opcion == "3" and es_administrador:
+
+                    licencias_aprobadas = [
+                        licencia
+                        for licencia in sistema.licencias
+                        if licencia.estado == "aprobada"
+                    ]
+
+                    licencias_aprobadas = ordenar_licencias_merge_sort(
+                        licencias_aprobadas,
+                        colaboradores_por_legajo
+                    )
+
+                    if not licencias_aprobadas:
+                        print("No hay licencias aprobadas.")
+                        continue
+
+                    for licencia in licencias_aprobadas:
+                        print(licencia)
+
+                    id_licencia = int(
+                        input("ID de licencia a resolver: ")
+                    )
+
+                    accion = input(
+                        "Confirmar (s) o rechazar (n): "
+                    ).strip().lower()
+
+                    if accion not in ("s", "n"):
+                        print("Accion invalida.")
+                        continue
+
+                    licencia = sistema.admin_confirmar_licencia(
+                        id_licencia,
+                        confirmar=(accion == "s")
+                    )
+
+                    print(f"Nuevo estado: {licencia.estado}")
+
+                # CU N10: ALTA DE COLABORADOR
+
+                elif opcion == "4" and es_administrador:
+
                     legajo = int(input("Legajo: "))
                     nombre = input("Nombre: ").strip()
                     apellido = input("Apellido: ").strip()
                     dni = int(input("DNI: "))
-                    area = input("Área (ej. Customer Care): ").strip()
+                    area = input("Area: ").strip()
                     email = input("Email corporativo: ").strip()
-                    hijos = input("¿Tiene hijos? (s/n): ").strip().lower() == "s"
-                    casado = input("¿Está casado/a? (s/n): ").strip().lower() == "s"
 
-                    nuevo = sistema.cu10_alta_colaborador(
-                        legajo, nombre, apellido, dni, date.today(), area, email, hijos, casado
+                    tiene_hijos = (
+                        input("Tiene hijos? (s/n): ")
+                        .strip().lower() == "s"
                     )
-                    print(f"Colaborador creado: {nuevo}")
+
+                    esta_casado = (
+                        input("Esta casado/a? (s/n): ")
+                        .strip().lower() == "s"
+                    )
+
+                    nuevo_colaborador = sistema.cu10_alta_colaborador(
+                        legajo,
+                        nombre,
+                        apellido,
+                        dni,
+                        date.today(),
+                        area,
+                        email,
+                        tiene_hijos,
+                        esta_casado
+                    )
+
+                    print("Colaborador creado correctamente.")
+                    print(nuevo_colaborador)
+
                     print(
-                        f"Credenciales generadas -> Usuario: {nuevo.usuario} | Contraseña: {nuevo.contrasena}"
+                        f"Usuario: {nuevo_colaborador.usuario}"
                     )
 
-                elif opcion == "5" and es_admin:
-                    print("--- Licencias ordenadas por Prioridad Familiar y Preferencia (Bubble Sort) ---")
-                    for lic in ordenar_licencias_por_preferencia(sistema.licencias, mapa_colabs):
-                        colab_lic = mapa_colabs.get(lic.colaborador_legajo)
-                        prio_fam = colab_lic.nivel_prioridad if colab_lic else 0
-                        print(f"{lic} | Prioridad Familiar: {prio_fam}")
+                    print(
+                        f"Contrasena: {nuevo_colaborador.contrasena}"
+                    )
 
-                elif opcion == "6" and es_admin:
-                    print("--- Colaboradores ordenados por Prioridad Familiar (Bubble Sort) ---")
-                    for col in ordenar_colaboradores_por_prioridad(sistema.colaboradores):
-                        print(col)
+                # ADMINISTRADOR: LISTAR CON MERGE SORT
 
-                # --- Cerrar sesión y Salir ---
+                elif opcion == "5" and es_administrador:
+
+                    licencias_ordenadas = ordenar_licencias_merge_sort(
+                        sistema.licencias,
+                        colaboradores_por_legajo
+                    )
+
+                    for licencia in licencias_ordenadas:
+                        print(licencia)
+
+                # CERRAR SESION
+
                 elif opcion == "9":
+
                     sistema.cu1_logout()
-                    print("Sesión cerrada correctamente.")
+                    print("Sesion cerrada correctamente.")
+
+                # SALIR
 
                 elif opcion == "0":
+
                     print("Saliendo del sistema...")
                     break
-                else:
-                    print("Opción inválida para su nivel de jerarquía.")
 
-            except Exception as e:
-                print(f"[ERROR]: {e}")
+                else:
+
+                    print("Opcion invalida para su jerarquia.")
+
+            except Exception as error:
+
+                print(f"ERROR: {error}")
 
 
 if __name__ == "__main__":
