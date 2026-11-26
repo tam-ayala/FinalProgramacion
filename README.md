@@ -68,9 +68,9 @@ Preferencia de fechas en orden ascendente.
 
 La prioridad familiar se determina de la siguiente manera:
 
-Colaborador casado: prioridad 3.
-Colaborador con hijos: prioridad 1.
-Colaborador sin hijos y soltero: prioridad 0.
+Colaborador casado: prioridad 1.
+Colaborador con hijos: prioridad 2.
+Colaborador sin hijos y soltero: prioridad 3.
 
 En caso de coincidir ambos criterios, se conserva el orden original de las solicitudes.
 
@@ -128,9 +128,9 @@ También se utilizaron excepciones como ValueError, TypeError, PermissionError y
 
 6. Pruebas unitarias
 
-Se desarrolló un módulo de pruebas utilizando la biblioteca unittest de Python.
+Se desarrolló un módulo de pruebas utilizando la biblioteca pytest de Python.
 
-Se plantearon nueve pruebas unitarias:
+Se plantearon nueve pruebas:
 
 Pruebas de clases (5):
 
@@ -156,7 +156,7 @@ Para desarrollar el proyecto se utilizaron:
 Python: lenguaje de programación principal.
 Programación orientada a objetos: implementación de clases, atributos, métodos, herencia y encapsulamiento de responsabilidades.
 Merge Sort: algoritmo de ordenamiento de solicitudes.
-Unittest: biblioteca utilizada para realizar pruebas unitarias.
+pytest: biblioteca utilizada para realizar pruebas unitarias.
 Visual Studio Code: entorno de desarrollo utilizado para escribir y ejecutar el código.
 8. Conclusión
 

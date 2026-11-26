@@ -3,7 +3,7 @@ from datetime import date
 from Service.casos_uso import SistemaVacacionesApex
 
 from Estructuras.algoritmo_ordenamiento import (
-    ordenar_licencias_merge_sort,
+    ordenar_licencias_merge_sort, 
 )
 
 from Models.clases import Supervisor, AdministradorRRHH

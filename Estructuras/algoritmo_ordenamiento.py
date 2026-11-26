@@ -9,8 +9,8 @@ def ordenar_licencias_merge_sort(
     Ordena licencias mediante Merge Sort.
 
     Criterios:
-    1. Prioridad familiar descendente.
-    2. Preferencia ascendente.
+    1. Prioridad familiar ascendente (1 = máxima, 2 = intermedia, 3 = mínima).
+    2. Preferencia ascendente (1 = primera opción).
     3. Mantiene el orden original cuando ambas prioridades coinciden.
 
     Complejidad temporal: O(n log n).
@@ -18,7 +18,7 @@ def ordenar_licencias_merge_sort(
     """
 
     def obtener_clave(licencia: Licencia) -> tuple[int, int]:
-        prioridad_familiar = 0
+        prioridad_familiar = 3
 
         if (
             colaboradores_por_legajo is not None
@@ -35,13 +35,12 @@ def ordenar_licencias_merge_sort(
             else 99
         )
 
-        return (-prioridad_familiar, preferencia)
+        return (prioridad_familiar, preferencia)
 
     def fusionar(
         mitad_izquierda: list[Licencia],
         mitad_derecha: list[Licencia],
     ) -> list[Licencia]:
-
         resultado = []
         indice_izquierda = 0
         indice_derecha = 0
@@ -51,7 +50,6 @@ def ordenar_licencias_merge_sort(
             indice_izquierda < len(mitad_izquierda)
             and indice_derecha < len(mitad_derecha)
         ):
-
             licencia_izquierda = mitad_izquierda[indice_izquierda]
             licencia_derecha = mitad_derecha[indice_derecha]
 
@@ -61,7 +59,6 @@ def ordenar_licencias_merge_sort(
             ):
                 resultado.append(licencia_izquierda)
                 indice_izquierda += 1
-
             else:
                 resultado.append(licencia_derecha)
                 indice_derecha += 1
@@ -73,7 +70,6 @@ def ordenar_licencias_merge_sort(
         return resultado
 
     def merge_sort(lista: list[Licencia]) -> list[Licencia]:
-
         # Caso base: una lista de cero o un elemento ya está ordenada.
         if len(lista) <= 1:
             return lista

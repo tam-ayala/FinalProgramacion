@@ -59,18 +59,18 @@ class Colaborador:
         """
         Determina la prioridad familiar del colaborador.
 
-        Casado: 3
-        Tiene hijos: 1
-        Sin hijos y soltero: 0
+        Casado: 1
+        Tiene hijos:2
+        Sin hijos y soltero: 3
         """
 
         if self.esta_casado:
-            return 3
-
-        if self.tiene_hijos:
             return 1
 
-        return 0
+        if self.tiene_hijos:
+            return 2
+
+        return 3
 
     def login(self, usuario: str, contrasena: str) -> bool:
         """Comprueba que el usuario esté activo y las credenciales sean correctas."""

@@ -1,4 +1,4 @@
-import unittest
+import pytest
 from datetime import date
 
 from Models.clases import (
@@ -16,7 +16,7 @@ from Estructuras.algoritmo_ordenamiento import (
 )
 
 
-class TestClasesYCasosDeUso(unittest.TestCase):
+class TestClasesYCasosDeUso:
 
     # ==========================================
     # TESTS DE LAS CLASES (5)
@@ -41,9 +41,9 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             esta_casado=True
         )
 
-        self.assertEqual(c_soltero.nivel_prioridad, 0)
-        self.assertEqual(c_hijos.nivel_prioridad, 1)
-        self.assertEqual(c_casado.nivel_prioridad, 3)
+        assert c_soltero.nivel_prioridad == 3
+        assert c_hijos.nivel_prioridad == 2
+        assert c_casado.nivel_prioridad == 1
 
     def test_clase_supervisor(self):
 
@@ -60,9 +60,9 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             nivel_preferencia=1
         )
 
-        self.assertEqual(sup.nivel_jerarquia, 2)
-        self.assertTrue(sup.gestionar_licencia(lic, aprobar=True))
-        self.assertEqual(lic.estado, "asignada")
+        assert sup.nivel_jerarquia == 2
+        assert sup.gestionar_licencia(lic, aprobar=True) is True
+        assert lic.estado == "asignada"
 
     def test_clase_administrador_rrhh(self):
 
@@ -78,9 +78,9 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             estado="aprobada"
         )
 
-        self.assertEqual(admin.nivel_jerarquia, 3)
-        self.assertTrue(admin.confirmar_licencia(lic))
-        self.assertEqual(lic.estado, "confirmada")
+        assert admin.nivel_jerarquia == 3
+        assert admin.confirmar_licencia(lic) is True
+        assert lic.estado == "confirmada"
 
     def test_clase_licencia(self):
 
@@ -96,8 +96,8 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             date(2026, 6, 1)
         )
 
-        self.assertTrue(lic_valida.validar_periodo())
-        self.assertFalse(lic_invalida.validar_periodo())
+        assert lic_valida.validar_periodo() is True
+        assert lic_invalida.validar_periodo() is False
 
     def test_clase_calendario_corporativo(self):
 
@@ -110,8 +110,8 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             estado="confirmada"
         )
 
-        self.assertTrue(cal.agregar_vacaciones(lic))
-        self.assertEqual(cal.dias_disponibles, 20)
+        assert cal.agregar_vacaciones(lic) is True
+        assert cal.dias_disponibles == 20
 
     # ==========================================
     # TESTS DE CASOS DE USO (4)
@@ -123,8 +123,8 @@ class TestClasesYCasosDeUso(unittest.TestCase):
 
         usuario = sistema.cu1_login("jperez", "colab123")
 
-        self.assertEqual(usuario.id_legajo, 1004)
-        self.assertEqual(sistema.usuario_logueado, usuario)
+        assert usuario.id_legajo == 1004
+        assert sistema.usuario_logueado == usuario
 
     def test_cu4_rankear_fechas(self):
 
@@ -147,10 +147,10 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             colaboradores_por_legajo
         )
 
-        self.assertEqual(ordenadas[0].id_licencia, 7)
-        self.assertEqual(ordenadas[0].nivel_preferencia, 1)
-        self.assertEqual(ordenadas[1].nivel_preferencia, 2)
-        self.assertEqual(ordenadas[2].nivel_preferencia, 3)
+        assert ordenadas[0].id_licencia == 7
+        assert ordenadas[0].nivel_preferencia == 1
+        assert ordenadas[1].nivel_preferencia == 2
+        assert ordenadas[2].nivel_preferencia == 3
 
     def test_cu6_firmar_licencia(self):
 
@@ -170,8 +170,8 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             colab, 6
         )
 
-        self.assertEqual(lic_firmada.estado, "aprobada")
-
+        assert lic_firmada.estado == "aprobada"
+        
     def test_cu10_alta_colaborador(self):
 
         sistema = SistemaVacacionesApex()
@@ -190,10 +190,8 @@ class TestClasesYCasosDeUso(unittest.TestCase):
             esta_casado=False
         )
 
-        self.assertEqual(nuevo.usuario, "clópez")
-        self.assertEqual(nuevo.nivel_prioridad, 1)
-        self.assertIn(nuevo, sistema.colaboradores)
+        assert nuevo.usuario == "clópez"
+        assert nuevo.nivel_prioridad == 2
+        assert nuevo in sistema.colaboradores
 
 
-if __name__ == "__main__":
-    unittest.main()
